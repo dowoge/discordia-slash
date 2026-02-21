@@ -157,7 +157,7 @@ local function AugmentResolved(ia)
 	do
 		local members = resolved.members
 
-		if members then
+		if members and guild then
 			for k, v in pairs(members) do
 				members[k] = guild:getMember(k)
 			end
@@ -167,7 +167,7 @@ local function AugmentResolved(ia)
 	do
 		local roles = resolved.roles
 
-		if roles then
+		if roles and guild then
 			for k, v in pairs(roles) do
 				roles[k] = guild._roles:_insert(v)
 			end
@@ -177,7 +177,7 @@ local function AugmentResolved(ia)
 	do
 		local channels = resolved.channels
 
-		if channels then
+		if channels and guild then
 			for k, v in pairs(channels) do
 				channels[k] = guild:getChannel(k)
 			end
@@ -281,9 +281,13 @@ do
 
 					ia.client:emit("messageCommand", ia, data, data.message)
 				elseif data.type == userType then
-					data.member = data.resolved.members[data.target_id]
+						local resolved = data.resolved or {}
+						local members = resolved.members
+						local users = resolved.users
 
-					ia.client:emit("userCommand", ia, data, data.member)
+						data.member = (members and members[data.target_id]) or (users and users[data.target_id])
+
+						ia.client:emit("userCommand", ia, data, data.member)
 				end
 			elseif ia.type == autocompleteType then
 				local data = ia.data
