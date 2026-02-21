@@ -47,7 +47,9 @@ do
 end
 
 function tools.userError(ia, err)
-	io.write("InteractionError (", ia.data.id, ") by ", ia.member.id, ". Error: ", tostring(err), "\n")
+	local invoker = ia.member or ia.user
+	local invokerId = invoker and invoker.id or "unknown"
+	io.write("InteractionError (", ia.data.id, ") by ", invokerId, ". Error: ", tostring(err), "\n")
 
 	ia:reply("**Interaction Error**\n" .. tostring(err), true)
 end
@@ -55,7 +57,9 @@ end
 function tools.devError(ia, err, trace)
 	trace = tostring(trace) or debug.traceback(nil, 2)
 
-	io.write("InteractionError (", ia.data.id, ") by ", ia.member.id, ". Error: ", tostring(err), "\n", trace)
+	local invoker = ia.member or ia.user
+	local invokerId = invoker and invoker.id or "unknown"
+	io.write("InteractionError (", ia.data.id, ") by ", invokerId, ". Error: ", tostring(err), "\n", trace)
 
 	ia:reply("**Interaction Error**\n" .. tostring(err) .. "\n```lua\n" .. trace .. "\n```", true)
 end
@@ -183,20 +187,64 @@ function commandMeta:setDefaultPermission(default_permission)
 	return self
 end
 
+function commandMeta:setIntegrationTypes(integration_types)
+	if not integration_types then
+		error("integration_types must not be nil")
+	end
+
+	self.integration_types = integration_types
+
+	return self
+end
+
+function commandMeta:setContexts(contexts)
+	if not contexts then
+		error("contexts must not be nil")
+	end
+
+	self.contexts = contexts
+
+	return self
+end
+
 function tools.applicationCommand()
 	return setmetatable({}, commandMeta)
 end
 
+local defaultIntegrationTypes = {
+	dia.enums.applicationIntegrationType.guildInstall,
+	dia.enums.applicationIntegrationType.userInstall,
+}
+
+local defaultContexts = {
+	dia.enums.interactionContextType.guild,
+	dia.enums.interactionContextType.botDm,
+	dia.enums.interactionContextType.privateChannel,
+}
+
 function tools.slashCommand(name, description)
-	return tools.applicationCommand():setName(name):setDescription(description):setType(dia.enums.appCommandType.chatInput)
+	return tools.applicationCommand()
+		:setName(name)
+		:setDescription(description)
+		:setType(dia.enums.appCommandType.chatInput)
+		:setIntegrationTypes(defaultIntegrationTypes)
+		:setContexts(defaultContexts)
 end
 
 function tools.userCommand(name)
-	return tools.applicationCommand():setName(name):setType(dia.enums.appCommandType.user)
+	return tools.applicationCommand()
+		:setName(name)
+		:setType(dia.enums.appCommandType.user)
+		:setIntegrationTypes(defaultIntegrationTypes)
+		:setContexts(defaultContexts)
 end
 
 function tools.messageCommand(name)
-	return tools.applicationCommand():setName(name):setType(dia.enums.appCommandType.message)
+	return tools.applicationCommand()
+		:setName(name)
+		:setType(dia.enums.appCommandType.message)
+		:setIntegrationTypes(defaultIntegrationTypes)
+		:setContexts(defaultContexts)
 end
 
 local optionMeta = {
